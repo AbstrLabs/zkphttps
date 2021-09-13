@@ -1,0 +1,39 @@
+- client random
+- client priv,pub key
+- client hello (random, pubkey)
+- sent to server, get server (random, pubkey)
+- shared secret
+- server_write_key, server_write_iv, server_finished_key, client_...
+- server certs
+- server cert_verify
+- server_finished
+-- change cipher
+- client send encrypted finished handshake
+- rederive application secrets, server_write_key, server_write_iv, server_finished_key, client_..., client_secret
+- recv_tls_and_decrypt
+
+w:
+- client_random, client_ecdh_privkey, client_ecdh_pubkey
+- server_random, server_ecdh_pubkey
+- handshake_secret
+- server_write_key, nonce (iv), seq number
+- TLS packets
+
+x:
+- timestamp
+- token
+- price
+
+C(w, x) :=
+    - client_random, client_ecdh_pubkey in Client Hello Message, (client_ecdh_privkey, client_ecdh_pubkey) is a keypair
+    - server_random, server_ecdh_pubkey in Server Hello Message.
+    - cert chain is valid, follows PKI
+    - certificate verify is vaid, server owns the cert privkey
+    - handshake_secret is derived from client_ecdh_privkey, server_ecdh_pubkey
+    - server_write_key, nonce and seq is derived from handshake_secret
+    - TLS packet can be decrypt by server_write_key, nonce (iv) and seq num
+    - After decrypt, it's a HTTP response contains x.
+
+Prover, two parts:
+- Making requests to obtain x. Record (w, x) during the process. Can be in any lang, Python here.
+- C(w, x). Must written in a circuit lang. But due to time limit, a Python version is provided, which we make sure each line can be transform to a circuit lang.
