@@ -646,77 +646,43 @@ def main():
 
     certs = handle_server_cert(server_cert)
     print(f"    Got {len(certs)} certs")
-    # from cryptography import x509
-    # cert = x509.load_der_x509_certificate(certs[0])
-    # print(cert.signature.hex())
-    # print(cert.public_key())
     
+    cert = crypto.load_certificate(crypto.FILETYPE_ASN1, certs[0])
+    cert_pubkey = cert.get_pubkey()
+    cert_pubkey = crypto.dump_publickey(crypto.FILETYPE_PEM, cert_pubkey)
+    
+    print('---- 1 2 3')
+    print(cert_pubkey)
     cert = Certificate.load(certs[0])
-    # print(cert.signature)
+    import base64
+    print(base64.encodebytes(bytes(cert.public_key['public_key'])))
+    # cert_pubkey2 = bytes(cert.public_key['public_key'])
 
-    # cert = crypto.load_certificate(crypto.FILETYPE_ASN1, certs[0])
+    import M2Crypto
+    bio = M2Crypto.BIO.MemoryBuffer(certs[0])
+    print('hh')
+    cert3 = M2Crypto.X509.load_cert_bio(bio, M2Crypto.X509.FORMAT_DER)
+    print('jj')
+    cert_pubkey3 = cert3.get_pubkey().as_der()
+    cert_pubkey3 = crypto.load_publickey(crypto.FILETYPE_ASN1, cert_pubkey3)
+
+    print('kk')
+
+    print(crypto.dump_publickey(crypto.FILETYPE_PEM, cert_pubkey3))
+    exit(0)
+    # assert cert_pubkey == cert_pubkey2
+    # exit(0)
     issuer_cert = crypto.load_certificate(crypto.FILETYPE_ASN1, open('digicert.der', 'rb').read())
-    issuer_pubkey=issuer_cert.get_pubkey()
-    print('8888888')
+    issuer_pubkey = issuer_cert.get_pubkey()
+    ip = crypto.dump_publickey(crypto.FILETYPE_ASN1, issuer_pubkey)
     issuer_pubkey = crypto.dump_publickey(crypto.FILETYPE_PEM, issuer_pubkey)
     print(issuer_pubkey)
-
-    # import base64
-    # print(''.join(str(crypto.dump_publickey(crypto.FILETYPE_PEM, issuer_pubkey)).split('\\n')[1:][:-2]).encode('utf8'))
-    # issuer_pubkey=base64.decodebytes(''.join(str(crypto.dump_publickey(crypto.FILETYPE_PEM, issuer_pubkey)).split('\\n')[1:][:-2]).encode('utf8'))
-    # print(base64.encodebytes(issuer_pubkey))
-    # exit(0)
-    # pprint(cert.digest('sha256'))
-    # exit(0)
-    with open('yahoocert.der', 'wb') as f:
-        f.write(certs[0])
-    # exit(0)
-    # print('mmmmmmmmm')
-    # pprint(cert.authority_information_access_value[1]['access_location'].contents)
-    # exit(0)
-
-    # crypto.verify(cert, cert.sign, data, digest)
-    # print(cert['tbs_certificate'])
-    # print('---')
-    # print(cert.hash_algo)
     print(cert.signature.hex())
-    # exit(0)
-    # print(cert.signature_algo)
-    # print(cert.sha256)
-    # cert_pubkey = bytes(cert.public_key['public_key'])
-    # issuer_cert = Certificate.load(open('digicert.der', 'rb').read())
-    # issuer_pubkey = bytes(issuer_cert.public_key['public_key'])
-    # import base64
-    # print('bbbbbbbbbbbbbb')
-    # # print(base64.encodebytes(cert_pubkey))
-    # print('999999999')
-    # print(base64.encodebytes(issuer_pubkey))
 
-
-    # from cryptography import x509
-    # issuer_cert = x509.load_der_x509_certificate(open('digicert.der', 'rb').read())
-    # print(cert.signature.hex())
-    # print('77777777')
-    # print(bytes(issuer_cert.public_key()))
     k = RSA.import_key(issuer_pubkey)
-    # print(issuer_cert.signature_algo)
-    # print('111', issuer_pubkey)
 
-    # hash1 = cert.sha256
-    # hash2 = sha256(cert.dump())
-    # print('+++++')
-    # print(cert['tbs_certificate'].dump().hex())
     cert_hash = sha256(cert['tbs_certificate'].dump())
-    # correct_result = 'dcc6496ebce535ba883b61ffa92719c603037df0993efd0cef0939d46764fd87'
-    print('---')
-    print(cert_hash.hex())
-    # print('!!!')
-    # print(hash2.hex())
-    # exit(0)
-    # from Crypto.Cipher import PKCS1_OAEP
-    # cipher_rsa = PKCS1_OAEP.new(k)
-    # decrypted_sig = cipher_rsa.decrypt(cert.signature)
-    # print(decrypted_sig.hex())
+
     import M2Crypto
     bio = M2Crypto.BIO.MemoryBuffer(issuer_pubkey)
     rsa_pub = M2Crypto.RSA.load_pub_key_bio(bio)
@@ -728,16 +694,6 @@ def main():
     else:
         print('cert is not issued by digicert')
         exit(1)
-    # try:
-        # pss.new(k).verify(SHA256.new(cert['tbs_certificate'].dump()), cert.signature)
-    # except ValueError:
-    #     print('no')
-    # else:
-    #     print('yes')
-    exit(0)
-    # print(cert_pubkey)
-    # # exit(0)
-    # pprint(cert.authority_information_access_value[1]['access_location'].contents)
 
     ###########################
     print("Receiving server verify certificate")
@@ -746,7 +702,18 @@ def main():
     server_seq_num += 1
 
     msgs_so_far = client_hello + server_hello + encrypted_extensions + server_cert
+    print('++++++++++++++++++++')
+    print(cert_pubkey.hex())
     cert_ok = handle_cert_verify(cert_verify, cert_pubkey, msgs_so_far)
+    if cert_ok:
+        print('Certificate verifying OK, server owns the corresponding private key')
+    else:
+        print("    Certificate verifying failed")
+        exit(1)
+
+    msgs_so_far = client_hello + server_hello + encrypted_extensions + server_cert
+    print(ip.hex())
+    cert_ok = handle_cert_verify(cert_verify, ip, msgs_so_far)
     if cert_ok:
         print('Certificate verifying OK, server owns the corresponding private key')
     else:
