@@ -488,15 +488,11 @@ def handle_server_cert(server_cert_data):
     certificates = []
 
     cert_string_left = server_cert_data[4: 4 + certificate_field_len]
-    print(len(cert_string_left))
     while cert_string_left:
         cert_type = cert_string_left[0]
         cert_entry_len = bytes_to_num(cert_string_left[1:4])
 
         cert_len = bytes_to_num(cert_string_left[4:7])
-        print('-----')
-        print(cert_entry_len)
-        print(cert_len)
         certificates.append(cert_string_left[7: 7 + cert_len])
         cert_string_left = cert_string_left[4 + cert_entry_len:]
     return certificates
@@ -510,21 +506,13 @@ def handle_cert_verify(cert_verify_data, rsa, msgs_so_far):
 
     cert_verify_len = bytes_to_num(cert_verify_data[1:4])
     assert len(cert_verify_data[4:]) >= cert_verify_len
-    print('====')
-    print(cert_verify_len)
     cert_verify_method = cert_verify_data[4:6]
     signature_len = bytes_to_num(cert_verify_data[6:8])    
-    print(signature_len)
     signature = cert_verify_data[8: 8+signature_len]
-    print(signature)
 
     message = b" " * 64 + b"TLS 1.3, server CertificateVerify" + b"\x00" + sha256(msgs_so_far)
     k = RSA.import_key(rsa)
     try:
-        print('<<<<')
-        print(SHA256.new(message))
-        print(signature)
-        print('>>>>')
         pss.new(k).verify(SHA256.new(message), signature)
     except ValueError:
         return False
@@ -541,9 +529,6 @@ def handle_finished(finished_data, server_finished_key, msgs_so_far):
     verify_data = finished_data[4:4+verify_data_len]
 
     hmac_digest = hmac_sha256(server_finished_key, sha256(msgs_so_far))
-    print('####')
-    print(verify_data)
-    print(hmac_digest)
     return verify_data == hmac_digest
 
 
@@ -647,49 +632,15 @@ def main():
     certs = handle_server_cert(server_cert)
     print(f"    Got {len(certs)} certs")
     
-    cert = crypto.load_certificate(crypto.FILETYPE_ASN1, certs[0])
-    cert_pubkey = cert.get_pubkey()
-    cert_pubkey = crypto.dump_publickey(crypto.FILETYPE_PEM, cert_pubkey)
-    
-    print('---- 1 2 3')
-    print(cert_pubkey)
-    cert = Certificate.load(certs[0])
-    import base64
-    print(base64.encodebytes(bytes(cert.public_key['public_key'])))
-    # cert_pubkey2 = bytes(cert.public_key['public_key'])
-
     import M2Crypto
     bio = M2Crypto.BIO.MemoryBuffer(certs[0])
-    print('hh')
-    cert3 = M2Crypto.X509.load_cert_bio(bio, M2Crypto.X509.FORMAT_DER)
-    print('jj')
-    cert_pubkey3 = cert3.get_pubkey().as_der()
-    cert_pubkey3 = crypto.load_publickey(crypto.FILETYPE_ASN1, cert_pubkey3)
+    cert = M2Crypto.X509.load_cert_bio(bio, M2Crypto.X509.FORMAT_DER)
+    cert_pubkey = cert.get_pubkey().as_der()
 
-    print('kk')
-
-    print(crypto.dump_publickey(crypto.FILETYPE_PEM, cert_pubkey3))
-    exit(0)
-    # assert cert_pubkey == cert_pubkey2
-    # exit(0)
-    issuer_cert = crypto.load_certificate(crypto.FILETYPE_ASN1, open('digicert.der', 'rb').read())
+    issuer_cert = M2Crypto.X509.load_cert('digicert.der', M2Crypto.X509.FORMAT_DER)
     issuer_pubkey = issuer_cert.get_pubkey()
-    ip = crypto.dump_publickey(crypto.FILETYPE_ASN1, issuer_pubkey)
-    issuer_pubkey = crypto.dump_publickey(crypto.FILETYPE_PEM, issuer_pubkey)
-    print(issuer_pubkey)
-    print(cert.signature.hex())
 
-    k = RSA.import_key(issuer_pubkey)
-
-    cert_hash = sha256(cert['tbs_certificate'].dump())
-
-    import M2Crypto
-    bio = M2Crypto.BIO.MemoryBuffer(issuer_pubkey)
-    rsa_pub = M2Crypto.RSA.load_pub_key_bio(bio)
-    decrypted_sig = rsa_pub.public_decrypt(cert.signature, M2Crypto.RSA.pkcs1_padding)
-    sig = decrypted_sig[19:]
-
-    if sig == cert_hash:
+    if cert.verify(issuer_pubkey):
         print('cert is issued by digicert')
     else:
         print('cert is not issued by digicert')
@@ -702,18 +653,7 @@ def main():
     server_seq_num += 1
 
     msgs_so_far = client_hello + server_hello + encrypted_extensions + server_cert
-    print('++++++++++++++++++++')
-    print(cert_pubkey.hex())
     cert_ok = handle_cert_verify(cert_verify, cert_pubkey, msgs_so_far)
-    if cert_ok:
-        print('Certificate verifying OK, server owns the corresponding private key')
-    else:
-        print("    Certificate verifying failed")
-        exit(1)
-
-    msgs_so_far = client_hello + server_hello + encrypted_extensions + server_cert
-    print(ip.hex())
-    cert_ok = handle_cert_verify(cert_verify, ip, msgs_so_far)
     if cert_ok:
         print('Certificate verifying OK, server owns the corresponding private key')
     else:
@@ -732,7 +672,6 @@ def main():
         print("    Server sent valid finish handshake msg")
     else:
         print("    Warning: Server sent wrong handshake finished msg")
-    exit(0)
 
     ###########################
     print("Handshake: sending a change cipher msg")
@@ -791,7 +730,8 @@ def main():
             break
 
         if rec_type == APPLICATION_DATA:
-            print(msg.decode(errors='ignore'))
+            pass
+            # print(msg.decode(errors='ignore'))
         elif rec_type == HANDSHAKE:
             NEW_SESSION_TICKET = 4
             if msg[0] == NEW_SESSION_TICKET:
