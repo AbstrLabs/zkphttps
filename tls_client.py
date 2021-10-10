@@ -1,4 +1,5 @@
 import socket
+import os
 from Crypto.Signature import pss
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
@@ -21,6 +22,9 @@ ALERT = b"\x15"
 HANDSHAKE = b"\x16"
 APPLICATION_DATA = b"\x17"
 
+def load(filename, dir='witness'):
+    with open(os.path.join(dir, filename), 'rb') as f:
+        return f.read()
 
 # BYTE MANIPULATION HELPERS
 def bytes_to_num(b):
@@ -332,6 +336,12 @@ def recv_tls_and_decrypt(s, key, nonce, seq_num):
     return msg_type, msg
 
 
+def load_tls_and_decrypt(w, key, nonce, seq_num, prefix=''):
+    encrypted_msg = load(prefix+str(seq_num), w)
+    msg_type, msg = do_authenticated_decryption(key, nonce, seq_num, APPLICATION_DATA, encrypted_msg)
+    return msg_type, msg
+
+
 # PACKET GENERATORS AND HANDLERS
 def gen_client_hello(client_random, ecdh_pubkey_x, ecdh_pubkey_y):
     CLIENT_HELLO = b"\x01"
@@ -544,15 +554,17 @@ def gen_encrypted_finished(client_write_key, client_write_iv, client_seq_num, cl
     return do_authenticated_encryption(client_write_key, client_write_iv, client_seq_num,
                                        HANDSHAKE, msg)
 
+SECP256R1_P = 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff
+SECP256R1_A = 0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc
+SECP256R1_G = (0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296,
+            0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5)
+
 def main():
     print(f"Connecting to {HOST}:{PORT}")
     s = socket.create_connection((HOST, PORT), TIMEOUT)
 
     print("Generating params for a client hello, the first message of TLS handshake")
-    SECP256R1_P = 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff
-    SECP256R1_A = 0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc
-    SECP256R1_G = (0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296,
-                0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5)
+
 
     client_random = b"\xAB" * 32
     our_ecdh_privkey = 42
@@ -613,7 +625,8 @@ def main():
 
     client_seq_num = 0  # for use in authenticated encryption
     server_seq_num = 0
-
+    print('------------------------')
+    print(server_write_key, server_write_iv, server_seq_num)
     ###########################
     print("Receiving encrypted extensions")
     rec_type, encrypted_extensions = recv_tls_and_decrypt(s, server_write_key, server_write_iv, server_seq_num)
@@ -625,6 +638,7 @@ def main():
 
     ###########################
     print("Receiving server certificates")
+
     rec_type, server_cert = recv_tls_and_decrypt(s, server_write_key, server_write_iv, server_seq_num)
     assert rec_type == HANDSHAKE
     server_seq_num += 1

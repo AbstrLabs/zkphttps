@@ -334,10 +334,10 @@ def send_tls(s, rec_type, msg):
 #     return str(msg_type[0])
 
 
-def recv_tls_and_decrypt(s, key, nonce, seq_num):
+def recv_tls_and_decrypt(s, key, nonce, seq_num, prefix = ''):
     rec_type, encrypted_msg = recv_tls(s)
     assert rec_type == APPLICATION_DATA
-    save(str(seq_num), encrypted_msg)
+    save(prefix+str(seq_num), encrypted_msg)
 
     msg_type, msg = do_authenticated_decryption(key, nonce, seq_num, APPLICATION_DATA, encrypted_msg)
     return msg_type, msg
@@ -555,15 +555,17 @@ def gen_encrypted_finished(client_write_key, client_write_iv, client_seq_num, cl
     return do_authenticated_encryption(client_write_key, client_write_iv, client_seq_num,
                                        HANDSHAKE, msg)
 
+
+SECP256R1_P = 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff
+SECP256R1_A = 0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc
+SECP256R1_G = (0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296,
+            0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5)
 def main():
     print(f"Connecting to {HOST}:{PORT}")
     s = socket.create_connection((HOST, PORT), TIMEOUT)
 
     print("Generating params for a client hello, the first message of TLS handshake")
-    SECP256R1_P = 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff
-    SECP256R1_A = 0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc
-    SECP256R1_G = (0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296,
-                0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5)
+
 
     client_random = b"\xAB" * 32
     our_ecdh_privkey = 42
@@ -627,7 +629,8 @@ def main():
 
     client_seq_num = 0  # for use in authenticated encryption
     server_seq_num = 0
-
+    print('------------------------')
+    print(server_write_key, server_write_iv, server_seq_num)
     ###########################
     print("Receiving encrypted extensions")
     rec_type, encrypted_extensions = recv_tls_and_decrypt(s, server_write_key, server_write_iv, server_seq_num)
@@ -724,7 +727,6 @@ def main():
     # reset sequence numbers
     client_seq_num = 0
     server_seq_num = 0
-
     ###########################
     # the rest is just for fun
     print(f"Sending {REQUEST}")
@@ -737,7 +739,7 @@ def main():
     print("Receiving an answer")
     while True:
         try:
-            rec_type, msg = recv_tls_and_decrypt(s, server_write_key, server_write_iv, server_seq_num)
+            rec_type, msg = recv_tls_and_decrypt(s, server_write_key, server_write_iv, server_seq_num, prefix = 'app_')
             server_seq_num += 1
         except BrokenPipeError:
             print("Connection closed on TCP level")
