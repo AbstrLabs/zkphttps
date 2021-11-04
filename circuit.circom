@@ -1,6 +1,7 @@
 pragma circom 2.0.0;
 
 include "gates.circom";
+include "comparators.circom";
 
 template CertValid(N) {
     signal input cert_chain[N];
@@ -8,10 +9,12 @@ template CertValid(N) {
     // which is cbor encoded timestamp: 1 byte tag, 1 byte type, 8 bytes int
     // Otherwise, first byte is bool false
     signal output out[10];
-    signal cert_chain_format_correct;
-    cert_chain_format_correct <== cert_chain[0] == 0x83;
 
-    out[0] <== cert_chain_format_correct ? 0xf4 : 0xc1;
+    component cert_chain_is_array3 = IsEqual();
+    cert_chain_is_array3.in[0] <== 0x83;
+    cert_chain_is_array3.in[1] <== cert_chain[0];
+    
+    out[0] <== (1 - cert_chain_is_array3.out) * 0xc1 + cert_chain_is_array3.out * 0xf4;
     // if (cert_chain_format_correct) {
     //     out[0] <== 0xf4; // false
     //     for (var i = 1; i < 10; i++) {
