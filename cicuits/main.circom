@@ -3,11 +3,22 @@ pragma circom 2.0.0;
 include "gates.circom";
 include "comparators.circom";
 
-template CertValid(N) {
+// template BytesEqual(N) {
+//     signal input bytes1[N];
+//     signal input bytes2[N];
+
+//     for (var i = 0; i < N; i++){
+//         component is_bytes_i_equal = IsEqual();
+//         is_bytes_i_equal.input[0] <== bytes1[i];
+//         is_bytes_i_equal.input[1] <== bytes2[i];
+        
+//     }
+// }
+
+template CertChainCBORValid(N) {
     signal input cert_chain[N];
     // if certificate is valid, return it's valid until this timestamp.
     // which is cbor encoded timestamp: 1 byte tag, 1 byte type, 8 bytes int
-    // Otherwise, first byte is bool false
     signal output out[10];
 
     component cert_chain_is_array3 = IsEqual();
@@ -27,4 +38,4 @@ template CertValid(N) {
     out[9] <== 0x53;
 }
 
-component main = CertValid(1000);
+component main = CertChainCBORValid(1000);
