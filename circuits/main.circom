@@ -38,4 +38,4 @@ template CertChainCBORValid(N) {
     out[9] <== 0x53;
 }
 
-component main = CertChainCBORValid(1000);
+component main = CertChainCBORValid(1);

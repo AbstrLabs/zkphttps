@@ -1,3 +1,4 @@
 circuit:
-	circom main.circom --r1cs --wasm --sym --c
-
+	mkdir -p build
+	cd circuits && circom main.circom --r1cs --wasm --sym --c -o ../build
+	
