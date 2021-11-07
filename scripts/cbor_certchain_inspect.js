@@ -1,8 +1,9 @@
 const cbor = require('cbor')
 const fs = require('fs')
 
-let a = fs.readFileSync('cert.cbor')
+let a = fs.readFileSync('res/cert.cbor')
 console.log(a)
+console.log(cbor.decode(a))
 console.log(cbor.encode([1,2,3]))
 console.log(Buffer.from(cbor.decode(a)[0]))
 console.log(cbor.encode(1635860416339))
