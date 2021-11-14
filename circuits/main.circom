@@ -23,6 +23,30 @@ template BytesEqual(N) {
     out <== is_bytes_equal.out;
 }
 
+template AugmentedCertificate(N, start_index) {
+    signal input cert_chain[N];
+
+    signal output cert_start_index;
+    signal output cert_end_index;
+
+    signal major_type;
+    signal quo;
+    // First byte indicates major type, which must be a map
+    major_type <-- cert_chain[start_index] \ 32; // >> 5
+    quo <-- cert_chain[start_index] % 32;
+    32 * major_type + quo === cert_chain[start_index];
+    // log(major_type);
+    major_type === 5;
+
+    // lol
+    for(var i = 0; i < N; i++) {
+    major_type === 5 + cert_chain[i]*0;
+    }
+    // cert_chain[9] === 162;
+    cert_start_index <== 10+0*major_type;
+    cert_end_index <== 10;
+}
+
 template CertChainCBORValid(N) {
     signal input cert_chain[N];
     // if certificate is valid, return it's valid until this timestamp.
@@ -30,21 +54,26 @@ template CertChainCBORValid(N) {
     signal output out[10];
 
     // First byte is 0x83
-    component cert_chain_is_array3 = IsEqual();
-    cert_chain_is_array3.in[0] <== 0x83;
-    cert_chain_is_array3.in[1] <== cert_chain[0];
-    assert(cert_chain_is_array3.out == 1);
+    cert_chain[0] === 0x83;
 
     // Second 8 bytes should be string '📜⛓' in cbor
-    component first_elem_valid = BytesEqual(8);
     var first_elem[8] = [0x67, 0xf0, 0x9f, 0x93, 0x9c, 0xe2, 0x9b, 0x93];
     for(var i = 0; i < 8; i++) {
-        first_elem_valid.bytes1[i] <== cert_chain[i+1];
-        first_elem_valid.bytes2[i] <== first_elem[i];
+        cert_chain[i+1] === first_elem[i];
     }
-    assert(first_elem_valid.out == 1);
 
-    out[0] <== 0xc1;
+    // Follows an AugmentedCertificate
+    component cert = AugmentedCertificate(N, 9);
+    for(var i = 0; i < N; i++) {
+        cert.cert_chain[i] <== cert_chain[i];
+    }
+    // cert_chain[9]*0 === 0;
+
+    // lol
+    signal temp;
+    temp<==cert.cert_start_index*0 + cert.cert_end_index*0;
+
+    out[0] <== 0xc1 +temp;
     out[1] <== 0x1b;
     out[2] <== 0x00;
     out[3] <== 0x00;
@@ -56,4 +85,4 @@ template CertChainCBORValid(N) {
     out[9] <== 0x53;
 }
 
-component main = CertChainCBORValid(9);
+component main = CertChainCBORValid(10);
