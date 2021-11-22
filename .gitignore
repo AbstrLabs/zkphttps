@@ -2,3 +2,4 @@ __pycache__
 node_modules
 build
 test_output
+outputs/
