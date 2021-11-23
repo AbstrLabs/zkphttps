@@ -1,6 +1,6 @@
 // The program input for zkphttps/src/main.leo
 [main]
-cert_chain: [u8; 10] = [131, 103, 240, 159, 147, 156, 226, 155, 147, 162];
+cert_chain_bytes: [u8; 10] = [131, 103, 240, 159, 147, 156, 226, 155, 147, 162];
 
 [registers]
 c: bool = false;
