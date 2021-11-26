@@ -528,11 +528,43 @@ circuit AugmentedCertificateRaw {
         return Self { bytes: bytes };
     }
 
-    function parse(self, start_index: u32) -> (bool, AugmentedCertificate, u32) {
+    function parse(self, start_index: u32, i: u32) -> (bool, AugmentedCertificate, u32) {
+        let invalid = (false, AugmentedCertificate::default(), 0u32);
         if self.bytes[start_index] / 32u8 != 5 {
-            return (false, AugmentedCertificate::default(), 0);
+            return invalid;
         } else {
-            return (true, AugmentedCertificate::new(self.bytes, start_index), start_index+1);
+            let pairs = self.bytes[start_index] - (5u8 * 32u8);
+            if pairs > 3 {
+                console.error("pairs should not exceed 3");
+                return invalid;
+            } else if pairs == 3 {
+                console.error("sct is not yet supported, at most 2");
+                return invalid;
+            } else if pairs == 2 {
+                if i == 1 {
+                    console.error("Subsequent certificates MUST NOT have an ocsp value");
+                    return invalid;
+                } else {
+                    // should be cert + oscp for the first
+                    console.assert(i == 0);
+                    let next6: [u8; 6] = [100, 99, 101, 114, 116, 89];
+                    if self.bytes[start_index+1..start_index+7] != next6 {
+                        return invalid;
+                    } else {
+                        return (true, AugmentedCertificate::new(self.bytes, start_index), start_index+1);
+                    }
+                }
+            } else if pairs == 1 {
+                if i == 0 {
+                    console.error("First certificate must have an ocsp value");
+                    return invalid;
+                } else {
+                    return (true, AugmentedCertificate::new(self.bytes, start_index), start_index+1);
+                }
+            } else {
+                console.error("Certificate should have at least one pair");
+                return invalid;
+            }
         }
     }
 }
@@ -548,7 +580,7 @@ circuit CertChain {
         let start_index: u32 = 0;
         for i in 0..2 {
             let aug_cert_raw = AugmentedCertificateRaw::new(aug_cert_bytes);
-            let (aug_cert_valid, aug_cert, new_start_index) = aug_cert_raw.parse(start_index);
+            let (aug_cert_valid, aug_cert, new_start_index) = aug_cert_raw.parse(start_index, i);
             start_index = new_start_index;
             console.log("start_index {} aug_cert_valid {}", start_index, aug_cert_valid);
             augmented_certificates[i] = aug_cert;
