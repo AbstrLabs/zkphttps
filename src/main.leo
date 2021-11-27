@@ -530,10 +530,14 @@ circuit AugmentedCertificateRaw {
 
     function parse(self, start_index: u32, i: u32) -> (bool, AugmentedCertificate, u32) {
         let invalid = (false, AugmentedCertificate::default(), 0u32);
+        let next6: [u8; 6] = [100, 99, 101, 114, 116, 89];
+        console.log("{} {} {}", i, start_index, self.bytes[start_index] / 32u8);
         if self.bytes[start_index] / 32u8 != 5 {
+            console.log("hehe");
             return invalid;
         } else {
             let pairs = self.bytes[start_index] - (5u8 * 32u8);
+            console.log("pairs {}", pairs);
             if pairs > 3 {
                 console.error("pairs should not exceed 3");
                 return invalid;
@@ -547,10 +551,11 @@ circuit AugmentedCertificateRaw {
                 } else {
                     // should be cert + oscp for the first
                     console.assert(i == 0);
-                    let next6: [u8; 6] = [100, 99, 101, 114, 116, 89];
-                    if self.bytes[start_index+1..start_index+7] != next6 {
+                    let begin_tags: [u8; 6] = self.bytes[start_index+1..start_index+7];
+                    if begin_tags != next6 {
                         return invalid;
                     } else {
+                        // return invalid;
                         return (true, AugmentedCertificate::new(self.bytes, start_index), start_index+1);
                     }
                 }
@@ -580,7 +585,12 @@ circuit CertChain {
         let start_index: u32 = 0;
         for i in 0..2 {
             let aug_cert_raw = AugmentedCertificateRaw::new(aug_cert_bytes);
-            let (aug_cert_valid, aug_cert, new_start_index) = aug_cert_raw.parse(start_index, i);
+            let a = aug_cert_raw.parse(start_index, i);
+            console.log("bbb");
+            let aug_cert_valid = a.0;
+            let aug_cert = a.1;
+            let new_start_index = a.2;
+            console.log("aaa");
             start_index = new_start_index;
             console.log("start_index {} aug_cert_valid {}", start_index, aug_cert_valid);
             augmented_certificates[i] = aug_cert;
