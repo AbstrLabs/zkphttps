@@ -528,12 +528,20 @@ circuit AugmentedCertificateRaw {
         return Self { bytes: bytes };
     }
 
+    function cert_begin_tags_valid(self, start: u32) -> bool {
+        let expected: [u8; 6] = [100, 99, 101, 114, 116, 89];
+        if expected[0] == self.bytes[start] && expected[1] == self.bytes[start+1] && expected[2] == self.bytes[start+2] &&
+           expected[3] == self.bytes[start+3] && expected[4] == self.bytes[start+4] && expected[5] == self.bytes[start+5] {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     function parse(self, start_index: u32, i: u32) -> (bool, AugmentedCertificate, u32) {
         let invalid = (false, AugmentedCertificate::default(), 0u32);
-        let next6: [u8; 6] = [100, 99, 101, 114, 116, 89];
         console.log("{} {} {}", i, start_index, self.bytes[start_index] / 32u8);
         if self.bytes[start_index] / 32u8 != 5 {
-            console.log("hehe");
             return invalid;
         } else {
             let pairs = self.bytes[start_index] - (5u8 * 32u8);
@@ -551,12 +559,10 @@ circuit AugmentedCertificateRaw {
                 } else {
                     // should be cert + oscp for the first
                     console.assert(i == 0);
-                    let begin_tags: [u8; 6] = self.bytes[start_index+1..start_index+7];
-                    if begin_tags != next6 {
-                        return invalid;
-                    } else {
-                        // return invalid;
+                    if self.cert_begin_tags_valid(start_index+1) {
                         return (true, AugmentedCertificate::new(self.bytes, start_index), start_index+1);
+                    } else {
+                        return invalid;
                     }
                 }
             } else if pairs == 1 {
@@ -586,11 +592,9 @@ circuit CertChain {
         for i in 0..2 {
             let aug_cert_raw = AugmentedCertificateRaw::new(aug_cert_bytes);
             let a = aug_cert_raw.parse(start_index, i);
-            console.log("bbb");
             let aug_cert_valid = a.0;
             let aug_cert = a.1;
             let new_start_index = a.2;
-            console.log("aaa");
             start_index = new_start_index;
             console.log("start_index {} aug_cert_valid {}", start_index, aug_cert_valid);
             augmented_certificates[i] = aug_cert;
