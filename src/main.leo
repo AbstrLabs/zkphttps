@@ -13,6 +13,28 @@ circuit CertRaw {
     }
 
     function parse(self) -> Cert {
+        console.assert(self.bytes[0] == 48u8);
+        let len: u32 = 0;
+        let nextChild: u32 = 0;
+        let nextSibling: u32 = 0;
+
+        if (self.bytes[1] / 128u8 == 1) {
+            let lenBytes = self.bytes[1] - (self.bytes[1] / 128u8) * 128u8;
+            console.assert(lenBytes <= 4); // impossible to be more than 4G
+            len = 0;
+            nextChild = 2+lenBytes as u32;
+            for i in 0..4 {
+                if i < lenBytes as u32 {
+                    len *= 256;
+                    len += self.bytes[2+i] as u32;
+                } else {
+                    len = len;
+                }
+            }
+        } else {
+            nextChild = 2;
+            len = self.bytes[1] as u32;
+        }
         let tbs = self.bytes;
         let algo: [u8; 10] = tbs[0..10];
         let sig: [u8; 200] = tbs[0..200];
