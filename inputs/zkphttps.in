@@ -1,6 +1,6 @@
 // The program input for zkphttps/src/main.leo
 [main]
-main_cert_bytes: [u8; 4000] = [
+main_cert_bytes: [u32; 4000] = [
      48, 130,   5, 142,  48, 130,   5,  20, 160,   3,
       2,   1,   2,   2,  16,  15, 136, 101,  74, 158,
     110, 123, 166,  61, 168, 123,   4,  71, 202, 109,
