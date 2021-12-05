@@ -402,6 +402,16 @@ main_cert_bytes: [u32; 4000] = [
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0
 ];
+tbs: u32 = 4;
+algo: u32 = 1308;
+sig: u32 = 1320;
+
+// tbs_version is always 5 bytes
+tbs_serialNumber: u32 = 13;
+tbs_signature: u32 = 31;
+tbs_issuer: u32 = 43;
+tbs_validity: u32 = 131;
+tbs_subject: u32 = 163;
 
 [registers]
 c: bool = false;

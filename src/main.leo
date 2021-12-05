@@ -59,9 +59,9 @@ circuit CertRaw {
 }
 
 circuit Cert {
-    tbs: [u32; 4000];
-    algo: [u32; 10];
-    sig: [u32; 200];
+    tbs_start: u32;
+    algo_start: u32;
+    sig_start: u32;
 
     function new(tbs: [u32; 4000], algo: [u32; 10], sig: [u32; 200]) -> Self {
         return Self { tbs: tbs, algo: algo, sig: sig };        

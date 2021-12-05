@@ -19,6 +19,7 @@ const certAsn1 = asn1js.fromBER(toArrayBuffer(certChain[1].cert))
 // console.log(asn1)
 const cert = new pkijs.Certificate({schema: certAsn1.result})
 console.log(cert)
+process.exit(0)
 let tbs = cert.tbs
 let algo = cert.signatureAlgorithm
 let sig = cert.signatureValue
