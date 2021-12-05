@@ -12,20 +12,20 @@ fs.writeFileSync('main-cert.der', certChain[1].cert)
 fs.writeFileSync('main-ocsp.der', certChain[1].ocsp)
 fs.writeFileSync('next-cert.der', certChain[2].cert)
 
-function toArrayBuffer(b) {
-    return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
-}
-const certAsn1 = asn1js.fromBER(toArrayBuffer(certChain[1].cert))
+// function toArrayBuffer(b) {
+//     return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+// }
+// const certAsn1 = asn1js.fromBER(toArrayBuffer(certChain[1].cert))
 // console.log(asn1)
-const cert = new pkijs.Certificate({schema: certAsn1.result})
-console.log(cert)
-process.exit(0)
-let tbs = cert.tbs
-let algo = cert.signatureAlgorithm
-let sig = cert.signatureValue
-console.log(tbs)
-console.log(algo)
-console.log(sig)
+// const cert = new pkijs.Certificate({schema: certAsn1.result})
+// console.log(cert)
+// process.exit(0)
+// let tbs = cert.tbs
+// let algo = cert.signatureAlgorithm
+// let sig = cert.signatureValue
+// console.log(tbs)
+// console.log(algo)
+// console.log(sig)
 
 let c = certChain[1].cert
 console.log(c)
@@ -75,3 +75,8 @@ console.log(c.slice(nextSibling+2, nextSibling+2+len))
 // console.log(ocspAsn1)
 // const ocsp = new pkijs.OCSPResponse({schema: ocspAsn1})
 // console.log(ocsp)
+
+let issuer = certChain[2].cert;
+issuerPubkey = issuer.slice(285, 385)
+console.log(issuerPubkey)
+fs.writeFileSync('issuerPubkey.der', issuerPubkey)
