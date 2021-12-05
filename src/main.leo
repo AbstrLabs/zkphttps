@@ -26,12 +26,28 @@ circuit Cert {
     }
 
     function is_valid(self) -> bool {
-        return self.tbs_serial_number_valid();
+        return self.tbs_serial_number_valid() && self.tbs_signature_valid();
     }
 
     function tbs_serial_number_valid(self) -> bool {
         return self.bytes[self.tbs_serial_number] == 2u8 // integer
             && len_bytes(self.bytes[self.tbs_serial_number+1]) == 0
             && (self.tbs_signature - self.tbs_serial_number) == (2 + u8_u32(self.bytes[self.tbs_serial_number+1]));
+    }
+        
+    function seq_valid(self, start: u32) -> (bool, u32) {
+        let lb = len_bytes(self.bytes[start+1]);
+        let len:u32 = lb == 0 ? 2+u8_u32(self.bytes[start+1]) : 2;
+        for i in 0..4 {
+            len += (i < lb) ? u8_u32(self.bytes[start+2+i]) : 0;
+            len *= (i < lb) ? 128 : 1;
+        }
+        let valid = self.bytes[start] == 48 && lb <= 4;
+        return (valid, len);
+    }
+
+    function tbs_signature_valid(self) -> bool {
+        let (valid, len) = self.seq_valid(self.tbs_signature);
+        return valid && self.tbs_signature + len == self.tbs_issuer;
     }
 }
