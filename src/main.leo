@@ -26,7 +26,7 @@ circuit Cert {
     }
 
     function is_valid(self) -> bool {
-        return self.tbs_serial_number_valid() && self.tbs_signature_valid();
+        return self.tbs_serial_number_valid() && self.tbs_signature_valid() && self.tbs_issuer_valid() && self.tbs_validity_valid();
     }
 
     function tbs_serial_number_valid(self) -> bool {
@@ -49,5 +49,15 @@ circuit Cert {
     function tbs_signature_valid(self) -> bool {
         let (valid, len) = self.seq_valid(self.tbs_signature);
         return valid && self.tbs_signature + len == self.tbs_issuer;
+    }
+
+    function tbs_issuer_valid(self) -> bool {
+        let (valid, len) = self.seq_valid(self.tbs_issuer);
+        return valid && self.tbs_issuer + len == self.tbs_validity;
+    }
+
+    function tbs_validity_valid(self) -> bool {
+        let (valid, len) = self.seq_valid(self.tbs_validity);
+        return valid && self.tbs_validity + len == self.tbs_subject;
     }
 }
