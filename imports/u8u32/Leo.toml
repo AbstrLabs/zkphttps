@@ -1,0 +1,8 @@
+[project]
+name = "u8u32"
+version = "0.1.0"
+description = "Convert u8 to u32 and back"
+license = "MIT"
+
+[remote]
+author = "justice-league" # Add your Aleo Package Manager username, team's name, or organization's name.
