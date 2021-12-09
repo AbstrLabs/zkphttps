@@ -87,6 +87,26 @@ circuit Cert {
         return (valid, len, start+2u32+lb);
     }
 
+    // Input the start offset of a Set, of this shape:
+    // SET (1 elem)
+    //    SEQUENCE (2 elem)
+    //      OBJECT IDENTIFIER
+    //      PrintableString
+    // If it's this shape, returns (true, start offset of objid, start offset of string, start offset of next element after set)
+    // If it's not this shape, returns (false, *, *, *)
+    function parse_set_seq_of_objid_str(self, start: u32) -> (bool, u32, u32, u32) {
+        let lb = len_bytes(self.bytes[start+1]);
+        let len: u32 = u8_u32(self.bytes[start+1]) + 2;
+        let next_start: u32 = start + len + 1;
+        let seq_start: u32 = start + 2;
+        let (seq_valid, seq_len, obj_id_start) = self.seq_valid(seq_start);
+        let string_start = obj_id_start + 5;
+        let lb_string = len_bytes(self.bytes[string_start+1]);
+        let len_string = u8_u32(self.bytes[string_start+1]) + 2;
+        let valid = self.bytes[start] == 49 && lb == 0 && seq_valid && (len - seq_len) == 2 && self.bytes[obj_id_start] == 6 && self.bytes[obj_id_start+1] == 3 && self.bytes[string_start] == 19 && lb_string == 1 && (len_string+2+5) == (seq_len - 2);
+        return (valid, obj_id_start, string_start, next_start);
+    }
+
     // tbs_signature is a valid sequence and takes correct number of bytes
     function tbs_signature_valid(self) -> bool {
         let (valid, len, content_start) = self.seq_valid(self.tbs_signature);
@@ -108,7 +128,11 @@ circuit Cert {
 
     function tbs_subject_valid(self) -> bool {
         let (valid, len, content_start) = self.seq_valid(self.tbs_subject);
-        // TODO
-        return true;
+        for i in 0..7 {
+            let (set_valid, obj_id_start, string_start, next_start) = self.parse_set_seq_of_objid_str(content_start);
+            content_start = next_start;
+            valid = content_start > self.tbs_subject + len ? valid : (valid || set_valid);
+        }
+        return valid;
     }
 }
