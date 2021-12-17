@@ -654,7 +654,7 @@ def main():
     cert = M2Crypto.X509.load_cert_bio(bio, M2Crypto.X509.FORMAT_DER)
     cert_pubkey = cert.get_pubkey().as_der()
 
-    issuer_cert = M2Crypto.X509.load_cert('digicert.der', M2Crypto.X509.FORMAT_DER)
+    issuer_cert = M2Crypto.X509.load_cert('res/digicert.der', M2Crypto.X509.FORMAT_DER)
     issuer_pubkey = issuer_cert.get_pubkey()
 
     if cert.verify(issuer_pubkey):

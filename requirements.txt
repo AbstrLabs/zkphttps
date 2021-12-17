@@ -1,0 +1,4 @@
+pycryptodome
+asn1crypto
+pyopenssl
+M2Crypto
