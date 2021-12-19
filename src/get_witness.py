@@ -6,13 +6,13 @@ from asn1crypto.x509 import Certificate
 from pprint import pprint
 from OpenSSL import crypto
 
-# HOST = "finance.yahoo.com"
-HOST = "api.coingecko.com"
+HOST = "finance.yahoo.com"
+# HOST = "api.coingecko.com"
 PORT = 443
 TIMEOUT = 30
 
-# REQUEST = b"GET /quote/GSAT?p=GSAT HTTP/1.1\r\nHost: finance.yahoo.com\r\nConnection: close\r\n\r\n"
-REQUEST = b"GET /api/v3/simple/price?ids=bitcoin&vs_currencies=usd HTTP/1.1\r\nHost: www.coingecko.com\r\nConnection: close\r\n\r\n"
+REQUEST = b"GET /quote/GSAT?p=GSAT HTTP/1.1\r\nHost: finance.yahoo.com\r\nConnection: close\r\n\r\n"
+# REQUEST = b"GET /api/v3/simple/price?ids=bitcoin&vs_currencies=usd HTTP/1.1\r\nHost: www.coingecko.com\r\nConnection: close\r\n\r\n"
 LEGACY_TLS_VERSION = b"\x03\x03"
 TLS_AES_128_GCM_SHA256 = b"\x13\x01"
 
