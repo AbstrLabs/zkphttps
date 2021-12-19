@@ -6,12 +6,13 @@ from asn1crypto.x509 import Certificate
 from pprint import pprint
 from OpenSSL import crypto
 
-HOST = "finance.yahoo.com"
+# HOST = "finance.yahoo.com"
+HOST = "api.coingecko.com"
 PORT = 443
 TIMEOUT = 30
 
-REQUEST = b"GET /quote/GSAT?p=GSAT HTTP/1.1\r\nHost: finance.yahoo.com\r\nConnection: close\r\n\r\n"
-
+# REQUEST = b"GET /quote/GSAT?p=GSAT HTTP/1.1\r\nHost: finance.yahoo.com\r\nConnection: close\r\n\r\n"
+REQUEST = b"GET /api/v3/simple/price?ids=bitcoin&vs_currencies=usd HTTP/1.1\r\nHost: www.coingecko.com\r\nConnection: close\r\n\r\n"
 LEGACY_TLS_VERSION = b"\x03\x03"
 TLS_AES_128_GCM_SHA256 = b"\x13\x01"
 
@@ -318,7 +319,7 @@ def recv_num_bytes(s, num):
 def recv_tls(s):
     rec_type = recv_num_bytes(s, 1)
     tls_version = recv_num_bytes(s, 2)
-    assert tls_version == LEGACY_TLS_VERSION
+    # assert tls_version == LEGACY_TLS_VERSION
 
     rec_len = bytes_to_num(recv_num_bytes(s, 2))
     rec = recv_num_bytes(s, rec_len)
@@ -746,6 +747,7 @@ def main():
             break
 
         if rec_type == APPLICATION_DATA:
+            print(server_seq_num, 'application_data')
             pass
             # print(msg.decode(errors='ignore'))
         elif rec_type == HANDSHAKE:
@@ -753,6 +755,7 @@ def main():
             if msg[0] == NEW_SESSION_TICKET:
                 print(f"New session ticket: {msg.hex()}")
         elif rec_type == ALERT:
+            print(server_seq_num, 'alert')
             alert_level, alert_description = msg
 
             print(f"Got alert level: {alert_level}, description: {alert_description}")
