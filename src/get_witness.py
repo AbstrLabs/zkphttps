@@ -748,6 +748,7 @@ def main():
 
         if rec_type == APPLICATION_DATA:
             print(server_seq_num, 'application_data')
+            print(msg)
             pass
             # print(msg.decode(errors='ignore'))
         elif rec_type == HANDSHAKE:
